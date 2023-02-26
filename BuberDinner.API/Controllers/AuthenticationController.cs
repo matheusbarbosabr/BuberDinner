@@ -1,5 +1,7 @@
-using BuberDinner.Application.Services.Authentication;
+using BuberDinner.Application.Authentication.Commands.Register;
+using BuberDinner.Application.Authentication.Queries.Login;
 using BuberDinner.Contracts.Authentication;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BuberDinner.API.Controllers;
@@ -8,22 +10,18 @@ namespace BuberDinner.API.Controllers;
     [Route("auth")]
     public class AuthenticationController : ControllerBase
     {
-
-        private readonly IAuthenticationService _authenticationService;
-
-        public AuthenticationController(IAuthenticationService authenticationService)
+        private readonly ISender _mediator;
+        public AuthenticationController(ISender mediator)
         {
-            _authenticationService = authenticationService;
+            _mediator = mediator;
         }
 
         [Route("register")]
-        public IActionResult Register(RegisterRequest request) 
+        public async Task<IActionResult> Register(RegisterRequest request)
         {
-            var authResult = _authenticationService.Register(
-                request.FirstName,
-                request.LastName, 
-                request.Email, 
-                request.Password);
+            var command = new RegisterCommand(request.FirstName, request.LastName, request.Email, request.Password);
+
+            var authResult = await _mediator.Send(command);
 
             var response = new AuthenticationResponse(
                 authResult.User.Id,
@@ -37,11 +35,11 @@ namespace BuberDinner.API.Controllers;
         }
 
         [Route("login")]
-        public IActionResult Login(LoginRequest request)
+        public async Task<IActionResult> Login(LoginRequest request)
         {
-            var authResult = _authenticationService.Login(
-                request.Email, 
-                request.Password);
+            var query = new LoginQuery(request.Email, request.Password);
+
+            var authResult = await _mediator.Send(query);
 
             var response = new AuthenticationResponse(
                 authResult.User.Id,
@@ -56,4 +54,3 @@ namespace BuberDinner.API.Controllers;
     }
 
 
-// Stopped at 31:55
